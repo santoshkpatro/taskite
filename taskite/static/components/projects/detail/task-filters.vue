@@ -2,14 +2,10 @@
 import { ref, watch, computed } from 'vue'
 import {
   DownOutlined,
-  InfoCircleOutlined,
-  DisconnectOutlined,
-  WarningOutlined,
-  MinusSquareOutlined,
 } from '@ant-design/icons-vue'
 import { generateAvatar } from '@/utils/generators'
 
-const props = defineProps(['members', 'labels'])
+const props = defineProps(['members', 'labels', 'priorities'])
 const emit = defineEmits(['filterChange'])
 
 const filterDropdownVisible = ref(false)
@@ -55,20 +51,13 @@ const getAvatar = (record) => {
           <p class="text-sm font-medium tracking-wide">Priorities</p>
           <a-checkbox-group v-model:value="selectedPriorities">
             <a-flex vertical>
-              <a-checkbox value="urgent" class="my-1"
-                ><info-circle-outlined></info-circle-outlined>
-                Urgent</a-checkbox
+              <a-checkbox
+                v-for="priority in props.priorities"
+                :key="priority.id"
+                :value="priority.id"
               >
-              <a-checkbox value="high" class="my-1"
-                ><warning-outlined></warning-outlined> High</a-checkbox
-              >
-              <a-checkbox value="medium" class="my-1"
-                ><minus-square-outlined></minus-square-outlined>
-                Medium</a-checkbox
-              >
-              <a-checkbox value="low" class="my-1"
-                ><disconnect-outlined></disconnect-outlined> Low</a-checkbox
-              >
+              <a-badge :color="priority.color" :text="priority.name" />
+              </a-checkbox>
             </a-flex>
           </a-checkbox-group>
         </div>

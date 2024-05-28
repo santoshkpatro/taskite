@@ -1,17 +1,19 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { labelListAPI } from '@/api/labels'
+import { priorityListAPI } from '@/api/priorities'
 import { taskUpdateAPI } from '@/api/tasks'
 import { stateTaskListAPI } from '@/api/states'
 import { projectMembersAPI } from '@/api/projects'
 import { VueDraggable } from 'vue-draggable-plus'
-// import { OnClickOutside } from '@vueuse/components'
+import draggable from 'vuedraggable'
 
 import DashboardLayout from '@/components/layouts/dashboard-layout.vue'
 import TaskCard from '@/components/projects/detail/task-card.vue'
 import TaskFilters from '@/components/projects/detail/task-filters.vue'
 import LoadingSpinner from '@/components/common/loading-spinner.vue'
 import TaskAddForm from '@/components/projects/detail/task-add-form.vue'
+import { message } from 'ant-design-vue'
 
 const props = defineProps(['project'])
 
@@ -20,6 +22,7 @@ const project = ref(props.project)
 const members = ref([])
 const states = ref([])
 const labels = ref([])
+const priorities = ref([])
 const selectedPriorities = ref([])
 const selectedAssignees = ref([])
 const selectedLabels = ref([])
@@ -32,7 +35,7 @@ const fetchStates = async (params = {}) => {
 
     states.value = data
   } catch (error) {
-    console.log(error)
+    message.warning(error.data.detail)
   } finally {
     loading.value = false
   }
@@ -43,7 +46,7 @@ const fetchMembers = async () => {
     const { data } = await projectMembersAPI(project.value.id)
     members.value = data
   } catch (error) {
-    console.log(error)
+    message.warning(error.data.detail)
   }
 }
 
@@ -52,12 +55,22 @@ const fetchLabels = async () => {
     const { data } = await labelListAPI(project.value.id)
     labels.value = data
   } catch (error) {
-    console.log(error)
+    message.warning(error.data.detail)
+  }
+}
+
+const fetchPriorities = async () => {
+  try {
+    const { data } = await priorityListAPI(project.value.id)
+    priorities.value = data
+  } catch (error) {
+    message.warning(error.data.detail)
   }
 }
 
 onMounted(() => {
   fetchMembers()
+  fetchPriorities()
   fetchLabels()
   fetchStates()
 })
@@ -65,63 +78,6 @@ onMounted(() => {
 watch([selectedPriorities, selectedAssignees, selectedLabels], async () => {
   fetchStates()
 })
-
-async function onUpdate(event, state_id) {
-  const selectedState = states.value.find((s) => s.id === state_id)
-  const currentTask = selectedState.tasks[event.newIndex]
-  const updatedData = {}
-
-  if (event.newIndex === 0) {
-    let next_task = selectedState.tasks[event.newIndex + 1]
-    updatedData['order'] = next_task.order / 2
-  } else if (event.newIndex === selectedState.tasks.length - 1) {
-    let previous_task = selectedState.tasks[event.newIndex - 1]
-    updatedData['order'] = previous_task.order / 2
-  } else {
-    let next_task = selectedState.tasks[event.newIndex + 1]
-    let previous_task = selectedState.tasks[event.newIndex - 1]
-    updatedData['order'] = (next_task.order + previous_task.order) / 2
-  }
-
-  try {
-    const { data } = await taskUpdateAPI(
-      project.value.id,
-      currentTask.id,
-      updatedData
-    )
-    currentTask.order = data.task.order
-  } catch (error) {
-    console.log(error)
-  }
-}
-async function onAdd(event, state_id) {
-  const selectedState = states.value.find((s) => s.id === state_id)
-  const currentTask = selectedState.tasks[event.newIndex]
-  const updatedData = { state_id: selectedState.id }
-
-  if (event.newIndex === 0) {
-    let next_task = selectedState.tasks[event.newIndex + 1]
-    updatedData['order'] = next_task.order / 2
-  } else if (event.newIndex === selectedState.tasks.length - 1) {
-    let previous_task = selectedState.tasks[event.newIndex - 1]
-    updatedData['order'] = previous_task.order + 10000
-  } else {
-    let next_task = selectedState.tasks[event.newIndex + 1]
-    let previous_task = selectedState.tasks[event.newIndex - 1]
-    updatedData['order'] = (next_task.order + previous_task.order) / 2
-  }
-
-  try {
-    const { data } = await taskUpdateAPI(
-      project.value.id,
-      currentTask.id,
-      updatedData
-    )
-    currentTask.order = data.task.order
-  } catch (error) {
-    console.log(error)
-  }
-}
 
 function reloadTasksWithNewFilters(newFilters) {
   const params = {}
@@ -140,18 +96,90 @@ function reloadTasksWithNewFilters(newFilters) {
   fetchStates(params)
 }
 
-function addNewTask(state_id, newTask) {
-  const selectedState = states.value.find((s) => s.id === state_id)
+function addNewTask(stateId, newTask) {
+  const selectedState = states.value.find((s) => s.id === stateId)
   selectedState.tasks.push({
     ...newTask,
     assignees: [],
   })
-
-  taskAddActiveForm.value = ''
 }
 
 function activateTaskAddForm(stateId) {
   taskAddActiveForm.value = stateId
+}
+
+const dragLog = async (state, event) => {
+  const updatedData = {}
+
+  // If the task is dragged within same state
+  if (event.moved) {
+    let newOrder = 0
+    const task = event.moved.element
+
+    if (event.moved.newIndex === 0) {
+      // If the task dragged to top
+      const nextTask = state.tasks[event.moved.newIndex + 1]
+      newOrder = parseFloat(nextTask.order / 2)
+      updatedData['order'] = newOrder
+    } else if (event.moved.newIndex === state.tasks.length - 1) {
+      // If the task dragged to bottom
+      const previousTask = state.tasks[event.moved.newIndex - 1]
+      newOrder = parseFloat(previousTask.order + 10000)
+      updatedData['order'] = newOrder
+    } else {
+      // If the task dragged to any place in between
+      const previousTask = state.tasks[event.moved.newIndex - 1]
+      const nextTask = state.tasks[event.moved.newIndex + 1]
+      newOrder =
+        (parseFloat(previousTask.order) + parseFloat(nextTask.order)) / 2
+      updatedData['order'] = newOrder
+    }
+
+    try {
+      await taskUpdateAPI(project.value.id, task.id, updatedData)
+      task.order = newOrder
+    } catch (error) {
+      message.error('Failed to update task order!')
+    }
+  }
+
+  // If the task is dragged across state
+  if (event.added) {
+    updatedData['stateId'] = state.id
+
+    const task = event.added.element
+    let newOrder = 0
+
+    if (event.added.newIndex === 0) {
+      // If the task dragged to top
+      const nextTask = state.tasks[event.added.newIndex + 1]
+      newOrder = nextTask ? parseFloat(nextTask.order / 2) : 50000
+      updatedData['order'] = newOrder
+    } else if (event.added.newIndex === state.tasks.length - 1) {
+      // If the task dragged to bottom
+      const previousTask = state.tasks[event.added.newIndex - 1]
+      newOrder = parseFloat(previousTask.order + 10000)
+      updatedData['order'] = newOrder
+    } else {
+      // If the task dragged to any place in between
+      const previousTask = state.tasks[event.added.newIndex - 1]
+      const nextTask = state.tasks[event.added.newIndex + 1]
+      newOrder =
+        (parseFloat(previousTask.order) + parseFloat(nextTask.order)) / 2
+      updatedData['order'] = newOrder
+    }
+
+    try {
+      await taskUpdateAPI(project.value.id, task.id, updatedData)
+      task.order = newOrder
+    } catch (error) {
+      message.error('Failed to update task order!')
+    }
+  }
+}
+
+const handleTaskDeactivate = () => {
+  console.log('Outttt')
 }
 </script>
 
@@ -169,6 +197,7 @@ function activateTaskAddForm(stateId) {
             </a>
             <task-filters
               :members="members"
+              :priorities="priorities"
               :labels="labels"
               @filterChange="reloadTasksWithNewFilters"
             />
@@ -191,33 +220,40 @@ function activateTaskAddForm(stateId) {
         <div v-for="state in states" :key="state.id" style="min-width: 320px">
           <div>
             <a-typography-title :level="5">{{ state.name }}</a-typography-title>
-            <VueDraggable
-              v-model="state.tasks"
-              id="tk-drag"
-              group="tasks"
-              @update="(event) => onUpdate(event, state.id)"
-              @add="(event) => onAdd(event, state.id)"
+            <draggable
+              :list="state.tasks"
+              group="states"
+              item-key="id"
+              @change="(event) => dragLog(state, event)"
             >
-              <task-card
-                v-for="task in state.tasks"
-                :key="task.id"
-                :task="task"
-                :project="project"
-                :members="members"
-              />
-            </VueDraggable>
+              <template #item="{ element: task }">
+                <div class="my-1">
+                  <task-card
+                    :task="task"
+                    :project="project"
+                    :members="members"
+                    :priorities="priorities"
+                  ></task-card>
+                </div>
+              </template>
 
-            <a-typography-link
-              v-show="taskAddActiveForm !== state.id"
-              @click="activateTaskAddForm(state.id)"
-              >+ Add Task</a-typography-link
-            >
-            <task-add-form
-              v-show="taskAddActiveForm === state.id"
-              :stateId="state.id"
-              :projectId="project.id"
-              @newTaskAdded="addNewTask"
-            ></task-add-form>
+              <template #footer>
+                <task-add-form
+                  :projectId="project.id"
+                  :stateId="state.id"
+                  @close="() => (taskAddActiveForm = nil)"
+                  @newTaskAdded="addNewTask"
+                  v-if="taskAddActiveForm === state.id"
+                ></task-add-form>
+                <p
+                  v-else
+                  @click="() => activateTaskAddForm(state.id)"
+                  class="text-blue-500 mt-3 ml-1"
+                >
+                  + Add Task
+                </p>
+              </template>
+            </draggable>
           </div>
         </div>
       </a-flex>

@@ -1,10 +1,12 @@
 <script setup>
 import { reactive } from 'vue'
 import { message } from 'ant-design-vue'
+import { CloseOutlined } from '@ant-design/icons-vue'
 
 import { taskAddAPI } from '@/api/tasks'
+
 const props = defineProps(['projectId', 'stateId'])
-const emit = defineEmits(['newTaskAdded'])
+const emit = defineEmits(['newTaskAdded', 'close'])
 
 const task_form = reactive({
   name: '',
@@ -19,17 +21,26 @@ const onFinish = async (values) => {
 
     emit('newTaskAdded', props.stateId, data.task)
   } catch (error) {
-    console.log(error)
+    message.error(error.data.detail)
+  } finally {
+    emit('close')
   }
 }
 
 const onFinishFailed = (errorInfo) => {
   console.log('Failed:', errorInfo)
 }
+
+const closeTaskAddForm = () => {
+  emit('close')
+}
 </script>
 
 <template>
   <a-card id="task-card" size="small">
+    <div class="flex justify-end">
+      <close-outlined @click="closeTaskAddForm" />
+    </div>
     <a-form
       layout="vertical"
       name="taskForm"

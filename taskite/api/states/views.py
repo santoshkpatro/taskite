@@ -25,6 +25,7 @@ class StateListCreateAPIView(ProjectFetchMixin, APIView):
                 Task.objects.order_by("order")
                 .prefetch_related("assignees")
                 .prefetch_related("labels")
+                .select_related("priority")
             )
             priorities = request.query_params.getlist("priorities[]")
             assignees = request.query_params.getlist("assignees[]")

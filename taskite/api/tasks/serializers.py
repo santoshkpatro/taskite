@@ -1,19 +1,27 @@
 from rest_framework import serializers
 
-from taskite.models import Task, User, Label
+from taskite.models import Task, User, Label, Priority
+
+
+class PrioritySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Priority
+        fields = ["id", "name", "color", "created_at"]
 
 
 class TaskUpdateSerializer(serializers.Serializer):
     state_id = serializers.UUIDField(required=False)
     name = serializers.CharField(required=False)
     description = serializers.CharField(required=False)
-    priority = serializers.ChoiceField(choices=Task.Priority.choices, required=False)
+    priority_id = serializers.UUIDField(required=False)
     order = serializers.FloatField(required=False)
     task_type = serializers.ChoiceField(choices=Task.TaskType.choices, required=False)
     assignee_ids = serializers.ListSerializer(required=False, child=serializers.UUIDField())
 
 
 class TaskSerializer(serializers.ModelSerializer):
+    priority = PrioritySerializer()
+
     class Meta:
         model = Task
         fields = [
@@ -64,6 +72,7 @@ class TaskLabelSerializer(serializers.ModelSerializer):
 class TaskDetailSerializer(serializers.ModelSerializer):
     assignees = TaskAssigneeSerializer(many=True)
     labels = TaskLabelSerializer(many=True)
+    priority = PrioritySerializer()
 
     class Meta:
         model = Task

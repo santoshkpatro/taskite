@@ -1,6 +1,17 @@
 from rest_framework import serializers
 
-from taskite.models import User, Task, State
+from taskite.models import User, Task, State, Priority
+
+
+class PrioritySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Priority
+        fields = [
+            "id",
+            "name",
+            "color",
+            "created_at"
+        ]
 
 
 class AssigneeSerializer(serializers.ModelSerializer):
@@ -19,6 +30,7 @@ class AssigneeSerializer(serializers.ModelSerializer):
 
 class TaskSerializer(serializers.ModelSerializer):
     assignees = AssigneeSerializer(many=True)
+    priority = PrioritySerializer()
 
     class Meta:
         model = Task

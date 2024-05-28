@@ -37,7 +37,8 @@
     "lodash": "^4.17.21",
     "vue": "^3.4.21",
     "vue-draggable-plus": "^0.4.0",
-    "vue-smooth-dnd": "^0.8.1"
+    "vue-smooth-dnd": "^0.8.1",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",

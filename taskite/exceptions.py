@@ -32,6 +32,12 @@ class StateNotFoundAPIException(APIException):
     default_detail = "No task found with the given state ID."
 
 
+class PriorityNotFoundAPIException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = "priority_not_found"
+    default_detail = "No priority found with the given priority ID."
+
+
 class ProjectMemberNotFoundAPIException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = "project_member_not_found"
@@ -42,3 +48,9 @@ class ProjectInviteNotFoundAPIException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_code = "project_invite_not_found"
     default_detail = "No project invite found with the given project invite ID."
+
+
+class OperationFailedAPIException(APIException):
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_code = "operation_failed"
+    default_detail = "Failed to perform the given operation."

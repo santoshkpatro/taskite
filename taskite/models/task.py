@@ -33,8 +33,11 @@ class Task(BaseUUIDTimestampModel):
     )
     name = models.TextField(max_length=512)
     description = models.TextField(blank=True, null=True)
-    priority = models.CharField(
+    priority_depr = models.CharField(
         max_length=20, choices=Priority.choices, default=Priority.NONE
+    )
+    priority = models.ForeignKey(
+        "Priority", on_delete=models.SET_NULL, null=True, blank=True
     )
     start_date = models.DateField(blank=True, null=True)
     target_date = models.DateField(blank=True, null=True)
@@ -72,11 +75,11 @@ class Task(BaseUUIDTimestampModel):
             #     self.sequence = last_sequence + 1
             self.sequence = self.project.next_task_sequence
             self.task_id = f"{self.project.project_id}-{self.sequence}"
-            
+
             # Increment next task sequence no.
             self.project.next_task_sequence += 1
             self.project.save(update_fields=["next_task_sequence"])
-            
+
             if not self.order:
                 last_order = (
                     Task.objects.filter(project=self.project, state=self.state)
@@ -158,3 +161,16 @@ class TaskLabel(BaseUUIDTimestampModel):
 
     def __str__(self) -> str:
         return f"{self.label} <{self.id}>"
+
+
+class TaskAttachment(BaseUUIDTimestampModel):
+    task = models.ForeignKey(
+        "Task", on_delete=models.CASCADE, related_name="attachments"
+    )
+    resource = models.FileField("uploads/tasks/attachments/")
+
+    class Meta:
+        db_table = "task_attachments"
+
+    def __str__(self) -> str:
+        return str(self.id)

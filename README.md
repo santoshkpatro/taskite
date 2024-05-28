@@ -24,7 +24,7 @@ For installing minioserver please refer the for installing as per the operating 
 
 For starting the minioserver use the following command
 ```
-minio server $(pwd)/data --console-address :9001
+minio server $(pwd)/media/minio --console-address :9001
 ```
 
 Then visit [localhost:9001](http://localhost:9001) to open minio admin panel.
@@ -49,7 +49,7 @@ Default username and password are minioserver and minioserver respectively.
             ],
             "Resource": [
                 "arn:aws:s3:::taskite",
-                "arn:aws:s3:::taskite/*"
+                "arn:aws:s3:::taskite/uploads/*"
             ]
         }
     ]

@@ -16,24 +16,17 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, username, email, full_name, password):
         user = self.create_user(username, email, full_name, password)
-        user.role = "admin"
         user.is_superuser = True
         user.save(using=self._db)
         return user
 
 
 class User(BaseUUIDTimestampModel, AbstractBaseUser):
-    class Role(models.TextChoices):
-        ADMIN = ("admin", "Admin")
-        STAFF = ("staff", "Staff")
-        GUEST = ("guest", "Guest")
-
     username = models.CharField(max_length=124, unique=True, blank=True)
     email = models.EmailField(max_length=255, unique=True)
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=30, blank=True, null=True)
-    role = models.CharField(max_length=10, choices=Role.choices, default=Role.STAFF)
-    avatar = models.ImageField(blank=True, null=True, upload_to="media/admins/")
+    avatar = models.ImageField(blank=True, null=True, upload_to="uploads/users/avatars/")
     timezone = models.CharField(max_length=100, default="UTC")
 
     display_name = models.CharField(max_length=125, blank=True)

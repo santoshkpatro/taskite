@@ -50,7 +50,7 @@ class Storage(BaseUUIDTimestampModel):
     def get_upload_path(cls, filename):
         basename, extension = os.path.splitext(filename)
         today = timezone.now()
-        new_filename = f"media/uploads/{today.year}/{today.month}/{basename[:20]}_{uuid.uuid4().hex}{extension}"
+        new_filename = f"uploads/{today.year}/{today.month}/{basename[:20]}_{uuid.uuid4().hex}{extension}"
 
         storage = cls(filename=new_filename, bucket=settings.AWS_BUCKET_NAME)
         storage.save()

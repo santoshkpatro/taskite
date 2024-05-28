@@ -1,5 +1,5 @@
+import sentry_sdk
 from django.db import transaction
-from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -24,6 +24,7 @@ from taskite.exceptions import (
     InvalidRequestBodyAPIException,
     ProjectInviteNotFoundAPIException,
     ProjectPermissionAPIException,
+    OperationFailedAPIException,
 )
 
 
@@ -56,14 +57,20 @@ class ProjectListCreateAPIView(APIView):
             )
 
         new_project_data = serializer.validated_data
-        with transaction.atomic():
-            project: Project = Project.objects.create(
-                **new_project_data, created_by=request.user
-            )
-            if project.visibility == Project.Visibility.PUBLIC:
-                ProjectMember.objects.create(
-                    project=project, user=request.user, role=ProjectMember.Role.ADMIN
+        try:
+            with transaction.atomic():
+                project: Project = Project.objects.create(
+                    **new_project_data, created_by=request.user
                 )
+                if project.visibility == Project.Visibility.PUBLIC:
+                    ProjectMember.objects.create(
+                        project=project,
+                        user=request.user,
+                        role=ProjectMember.Role.ADMIN,
+                    )
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            raise OperationFailedAPIException
 
         return Response(
             data={
@@ -89,26 +96,31 @@ class ProjectDetailUpdateDestroyAPIView(ProjectFetchMixin, APIView):
             raise InvalidRequestBodyAPIException
 
         data = serializer.validated_data
-        for attr, value in data.items():
-            prev_value = getattr(project, attr)
-            setattr(project, attr, value)
-            new_value = getattr(project, attr)
+        try:
+            with transaction.atomic():
+                for attr, value in data.items():
+                    prev_value = getattr(project, attr)
+                    setattr(project, attr, value)
+                    new_value = getattr(project, attr)
 
-            # Handling File Updates
-            if attr == "cover" and prev_value != new_value:
-                if prev_value:
-                    Storage.delete_upload(prev_value)
-                if new_value:
-                    Storage.confirm_upload(new_value)
+                    # Handling File Updates
+                    if attr == "cover" and prev_value != new_value:
+                        if prev_value:
+                            Storage.delete_upload(prev_value)
+                        if new_value:
+                            Storage.confirm_upload(new_value)
 
-            # Handling Project ID updates to all tasks
-            if attr == "project_id" and prev_value != new_value:
-                tasks = Task.objects.filter(project=project)
-                for task in tasks:
-                    setattr(task, "task_id", f"{new_value}-{task.sequence}")
-                Task.objects.bulk_update(tasks, fields=["task_id"])
+                    # Handling Project ID updates to all tasks
+                    if attr == "project_id" and prev_value != new_value:
+                        tasks = Task.objects.filter(project=project)
+                        for task in tasks:
+                            setattr(task, "task_id", f"{new_value}-{task.sequence}")
+                        Task.objects.bulk_update(tasks, fields=["task_id"])
 
-        project.save(update_fields=data.keys())
+                project.save(update_fields=data.keys())
+        except Exception as err:
+            sentry_sdk.capture_exception(err)
+            raise OperationFailedAPIException
         response_data = {
             "detail": "Project details got updated.",
             "project": ProjectSerializer(project).data,

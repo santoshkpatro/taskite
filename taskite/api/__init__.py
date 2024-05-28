@@ -19,6 +19,7 @@ from taskite.api.tasks.views import (
     TaskDetailUpdateDestroyAPIView,
 )
 from taskite.api.labels.views import LabelListCreateAPIView
+from taskite.api.priorities.views import PriorityListCreateAPIView
 from taskite.api.storages.views import StoragePresignedURLAPIView
 
 # fmt: off
@@ -47,4 +48,6 @@ urlpatterns = [
     path("projects/<uuid:project_id>/tasks/<uuid:task_id>/", TaskDetailUpdateDestroyAPIView.as_view()),
     
     path("projects/<uuid:project_id>/labels/", LabelListCreateAPIView.as_view()),
+
+    path("projects/<uuid:project_id>/priorities/", PriorityListCreateAPIView.as_view()),
 ]

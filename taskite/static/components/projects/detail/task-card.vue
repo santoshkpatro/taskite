@@ -4,27 +4,8 @@ import { generateAvatar } from '@/utils/generators'
 
 import TaskDetailModal from '@/components/projects/detail/task-detail-modal.vue'
 
-const { task, project, members } = defineProps(['task', 'project', 'members'])
+const { task, project, members, priorities } = defineProps(['task', 'project', 'members', 'priorities'])
 const emit = defineEmits(['updated'])
-
-const priorityTagColor = computed(() => {
-  switch (task.priority) {
-    case 'urgent':
-      return 'red'
-
-    case 'high':
-      return 'orange'
-
-    case 'medium':
-      return 'blue'
-
-    case 'low':
-      return 'secondary'
-
-    default:
-      return ''
-  }
-})
 
 const showTaskDetailModal = ref(false)
 function openTaskDetailModal() {
@@ -47,24 +28,6 @@ const getAvatar = (record) => {
   return record.avatar
 }
 
-const getPriorityCardColor = computed(() => {
-  switch (task.priority) {
-    case 'urgent':
-      return '#fff2f2'
-
-    case 'high':
-      return '#ffecde'
-
-    case 'medium':
-      return '#deefff'
-
-    case 'low':
-      return '#cccccc'
-
-    default:
-      return ''
-  }
-})
 </script>
 
 <template>
@@ -75,10 +38,9 @@ const getPriorityCardColor = computed(() => {
           task.taskId
         }}</a-typography-text>
       </div>
-      <a-tag :color="priorityTagColor" :bordered="false">
-        <a-typography-text style="font-size: smaller">
-          {{ task.priority }}
-        </a-typography-text>
+      <a-tag :bordered="false" v-if="task.priority" class="flex flex-row items-center">
+          <a-badge :color="task.priority.color" />
+          <div class="text-xs">{{ task.priority.name }}</div>
       </a-tag>
     </a-flex>
     <div>{{ task.name }}</div>
@@ -108,6 +70,7 @@ const getPriorityCardColor = computed(() => {
       :projectSlug="project.slug"
       :projectName="project.name"
       :members="members"
+      :priorities="priorities"
       @updated="handleTaskUpdateFromModal"
     ></task-detail-modal>
   </a-modal>

@@ -12,6 +12,7 @@ const props = defineProps([
   'projectSlug',
   'projectName',
   'members',
+  'priorities',
 ])
 const emit = defineEmits(['updated'])
 
@@ -31,7 +32,13 @@ const fetchTaskDetail = async () => {
 }
 const updateTask = async (payload) => {
   try {
-    await taskUpdateAPI(props.projectId, task.value.id, payload, {})
+    const { data } = await taskUpdateAPI(
+      props.projectId,
+      task.value.id,
+      payload,
+      {}
+    )
+    return data
   } catch (error) {
     console.log(error)
   }
@@ -62,8 +69,10 @@ const handleDescriptionUpdate = async () => {
 }
 
 const handlePriorityChange = (value) => {
-  updateTask({ priority: value })
-  emit('updated', { priority: value })
+  const priority = props.priorities.find((priority) => priority.id === value)
+
+  updateTask({ priorityId: value })
+  emit('updated', { priority })
 }
 
 const handleTaskTypeChange = (value) => {
@@ -130,14 +139,25 @@ const assigneeOptions = props.members.map((member) => {
           >
             <a-form-item label="Priority">
               <a-select
+                v-if="task.priority"
                 ref="select"
-                v-model:value="task.priority"
+                v-model:value="task.priority.id"
                 @change="handlePriorityChange"
               >
-                <a-select-option value="low">Low</a-select-option>
-                <a-select-option value="medium">Medium</a-select-option>
-                <a-select-option value="high">High</a-select-option>
-                <a-select-option value="urgent">Urgent</a-select-option>
+                <a-select-option
+                  :value="priority.id"
+                  v-for="priority in props.priorities"
+                  :key="priority.id"
+                  >{{ priority.name }}</a-select-option
+                >
+              </a-select>
+              <a-select v-else ref="select" @change="handlePriorityChange">
+                <a-select-option
+                  :value="priority.id"
+                  v-for="priority in props.priorities"
+                  :key="priority.id"
+                  >{{ priority.name }}</a-select-option
+                >
               </a-select>
             </a-form-item>
 
@@ -159,7 +179,6 @@ const assigneeOptions = props.members.map((member) => {
               <a-select
                 v-model:value="assigneeIds"
                 mode="multiple"
-                option-label-prop="children"
                 @change="handleAssigneeChange"
                 style="width: 150px"
                 :options="assigneeOptions"

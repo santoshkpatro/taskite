@@ -16,6 +16,7 @@ from taskite.models import (
     TaskLabel,
     Storage,
     ProjectInvite,
+    Priority
 )
 
 
@@ -82,7 +83,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = [
         (None, {"fields": ["username", "email", "password"]}),
         ("Personal info", {"fields": ["full_name", "display_name", "avatar"]}),
-        ("Permissions", {"fields": ["is_superuser", "role"]}),
+        ("Permissions", {"fields": ["is_superuser"]}),
     ]
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
     # overrides get_fieldsets to use this attribute when creating a user.
@@ -121,6 +122,11 @@ class ProjectInviteInline(admin.TabularInline):
     extra = 0
 
 
+class PriorityAdminInline(admin.TabularInline):
+    model = Priority
+    extra = 0
+
+
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ["name", "visibility", "created_at"]
@@ -128,6 +134,7 @@ class ProjectAdmin(admin.ModelAdmin):
         ProjectMemberInline,
         StateAdminInline,
         LabelAdminInline,
+        PriorityAdminInline,
         ProjectInviteInline,
     ]
     raw_id_fields = ["created_by"]
@@ -146,7 +153,7 @@ class TaskLabelInline(admin.TabularInline):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ["task_id", "project", "state", "priority", "created_at"]
+    list_display = ["task_id", "project", "state", "priority_depr", "created_at"]
     inlines = [TaskAssigneeInline, TaskLabelInline]
 
 
