@@ -58,7 +58,9 @@ class MemberSerializer(serializers.ModelSerializer):
 
 class ProjectCreateSerializer(serializers.Serializer):
     name = serializers.CharField()
-    visibility = serializers.ChoiceField(choices=Project.Visibility.choices, required=False)
+    visibility = serializers.ChoiceField(
+        choices=Project.Visibility.choices, required=False
+    )
     description = serializers.CharField(required=False, allow_blank=True)
 
 
@@ -83,13 +85,7 @@ class ProjectMemberInviteSerializer(serializers.Serializer):
 class ProjectInviteSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectInvite
-        fields = [
-            "id",
-            "role",
-            "message",
-            "email",
-            "created_at"
-        ]
+        fields = ["id", "role", "message", "email", "created_at"]
 
 
 class ProjectInviteHomeSerializer(serializers.ModelSerializer):

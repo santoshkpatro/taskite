@@ -161,16 +161,3 @@ class TaskLabel(BaseUUIDTimestampModel):
 
     def __str__(self) -> str:
         return f"{self.label} <{self.id}>"
-
-
-class TaskAttachment(BaseUUIDTimestampModel):
-    task = models.ForeignKey(
-        "Task", on_delete=models.CASCADE, related_name="attachments"
-    )
-    resource = models.FileField("uploads/tasks/attachments/")
-
-    class Meta:
-        db_table = "task_attachments"
-
-    def __str__(self) -> str:
-        return str(self.id)

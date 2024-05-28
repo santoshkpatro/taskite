@@ -1,10 +1,17 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { taskUpdateAPI, taskDetailAPI } from '@/api/tasks'
 import { generateAvatar } from '@/utils/generators'
+import { message } from 'ant-design-vue'
 
 import LoadingSpinner from '@/components/common/loading-spinner.vue'
 import BaseEditor from '@/components/common/base-editor.vue'
+
+import {
+  taskUpdateAPI,
+  taskDetailAPI,
+  attachmentListAPI,
+  commentListAPI,
+} from '@/api/tasks'
 
 const props = defineProps([
   'taskId',
@@ -27,9 +34,30 @@ const fetchTaskDetail = async () => {
     description.value = data.description
     assigneeIds.value = data.assignees.map((assignee) => assignee.id)
   } catch (error) {
-    console.log(error)
+    message.error(error.data.detail)
   }
 }
+
+const attachments = ref([])
+const fetchAttachments = async () => {
+  try {
+    const { data } = await attachmentListAPI(props.projectId, props.taskId)
+    attachments.value = data
+  } catch (error) {
+    message.error(error.data.detail)
+  }
+}
+
+const comments = ref([])
+const fetchComments = async () => {
+  try {
+    const { data } = await commentListAPI(props.projectId, props.taskId)
+    comments.value = data
+  } catch (error) {
+    message.error(error.data.detail)
+  }
+}
+
 const updateTask = async (payload) => {
   try {
     const { data } = await taskUpdateAPI(
@@ -40,13 +68,9 @@ const updateTask = async (payload) => {
     )
     return data
   } catch (error) {
-    console.log(error)
+    message.error(error.data.detail)
   }
 }
-
-onMounted(async () => {
-  fetchTaskDetail()
-})
 
 const name = ref('')
 const handleNameUpdate = async () => {
@@ -95,6 +119,12 @@ const assigneeOptions = props.members.map((member) => {
     label: member.displayName,
     avatar: !!member.avatar ? member.avatar : generateAvatar(member.fullName),
   }
+})
+
+onMounted(async () => {
+  fetchTaskDetail()
+  fetchAttachments()
+  fetchComments()
 })
 </script>
 

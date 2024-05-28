@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from taskite.models import Task, State, User, Priority
+from taskite.models import Task, State, User, Priority, Attachment, Comment
 from taskite.permissions import ProjectMemberAPIPermission
 from taskite.mixins import ProjectFetchMixin
 from taskite.exceptions import (
@@ -20,6 +20,8 @@ from taskite.api.tasks.serializers import (
     TaskSerializer,
     TaskCreateSerializer,
     TaskDetailSerializer,
+    AttachmentSerializer,
+    CommentSerializer,
 )
 
 
@@ -123,3 +125,35 @@ class TaskDetailUpdateDestroyAPIView(ProjectFetchMixin, APIView):
             data={"detail": "Task has been updated", "task": TaskSerializer(task).data},
             status=status.HTTP_200_OK,
         )
+
+
+class AttachmentListCreateAPIView(ProjectFetchMixin, APIView):
+    permission_classes = [IsAuthenticated, ProjectMemberAPIPermission]
+
+    def get(self, request, *args, **kwargs):
+        task = Task.objects.filter(
+            project=request.project, id=kwargs.get("task_id")
+        ).first()
+        if not task:
+            raise TaskNotFoundAPIException
+
+        attachments = Attachment.objects.filter(task=task)
+        serializer = AttachmentSerializer(attachments, many=True)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+
+class CommentListCreateAPIView(ProjectFetchMixin, APIView):
+    permission_classes = [IsAuthenticated, ProjectMemberAPIPermission]
+    
+    def get(self, request, *args, **kwargs):
+        task = Task.objects.filter(
+            project=request.project, id=kwargs.get("task_id")
+        ).first()
+        if not task:
+            raise TaskNotFoundAPIException
+
+        comments = Comment.objects.filter(task=task).select_related("user")
+        serializer = CommentSerializer(comments, many=True)
+
+        return Response(data=serializer.data, status=status.HTTP_200_OK)

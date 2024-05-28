@@ -17,6 +17,8 @@ from taskite.api.states.views import StateListCreateAPIView
 from taskite.api.tasks.views import (
     TaskListCreateAPIView,
     TaskDetailUpdateDestroyAPIView,
+    AttachmentListCreateAPIView,
+    CommentListCreateAPIView
 )
 from taskite.api.labels.views import LabelListCreateAPIView
 from taskite.api.priorities.views import PriorityListCreateAPIView
@@ -46,6 +48,8 @@ urlpatterns = [
     
     path("projects/<uuid:project_id>/tasks/", TaskListCreateAPIView.as_view()),
     path("projects/<uuid:project_id>/tasks/<uuid:task_id>/", TaskDetailUpdateDestroyAPIView.as_view()),
+    path("projects/<uuid:project_id>/tasks/<uuid:task_id>/attachments/", AttachmentListCreateAPIView.as_view()),
+    path("projects/<uuid:project_id>/tasks/<uuid:task_id>/comments/", CommentListCreateAPIView.as_view()),
     
     path("projects/<uuid:project_id>/labels/", LabelListCreateAPIView.as_view()),
 
