@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { generateAvatar } from '@/utils/generators'
 import { message } from 'ant-design-vue'
 
@@ -24,13 +24,14 @@ const props = defineProps([
 const emit = defineEmits(['updated'])
 
 const bordered = ref(false)
+const name = ref(null)
 
 const task = ref(null)
 const fetchTaskDetail = async () => {
   try {
     const { data } = await taskDetailAPI(props.projectId, props.taskId)
     task.value = data
-    name.value = data.name
+
     description.value = data.description
     assigneeIds.value = data.assignees.map((assignee) => assignee.id)
   } catch (error) {
@@ -72,15 +73,12 @@ const updateTask = async (payload) => {
   }
 }
 
-const name = ref('')
 const handleNameUpdate = async () => {
-  bordered.value = false
+  if (name.value.innerText !== task.value.name) {
+    updateTask({ name: name.value.innerText })
+    task.value.name = name.value.innerText
 
-  if (name.value !== task.value.name) {
-    updateTask({ name: name.value })
-    task.value.name = name.value
-
-    emit('updated', { name: name.value })
+    emit('updated', { name: name.value.innerText })
   }
 }
 
@@ -139,13 +137,8 @@ onMounted(async () => {
       </a-breadcrumb-item>
     </a-breadcrumb>
 
-    <a-input
-      size="large"
-      v-model:value="name"
-      :bordered="bordered"
-      @focus="() => (bordered = true)"
-      @blur="handleNameUpdate"
-    ></a-input>
+    <div contenteditable="true" ref="name" @blur="handleNameUpdate" class="text-lg my-1 py-2 focus:px-1">{{ task.name }}</div>
+
     <a-row :gutter="16">
       <a-col :span="16">
         <div>Description</div>
